@@ -14,7 +14,6 @@ session = sessionmaker(bind=engine)
 def get_schema() -> str:
    inspector = inspect(engine)
    table_names = inspector.get_view_names()
-   print(table_names)
    
    def get_column_details(table_name) -> list[str]:
       columns = inspector.get_columns(table_name)
@@ -27,7 +26,8 @@ def get_schema() -> str:
       table_info.extend(f" - {column}" for column in get_column_details(table_name))
       schema_info.append("\n".join(table_info))
           
-   engine.dispose()        
+   engine.dispose() 
+   print(schema_info)       
    return "\n\n".join(schema_info)
 
 async def query(sql_query: str) -> list[dict[str, Any]]:

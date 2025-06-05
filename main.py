@@ -2,7 +2,6 @@ import json
 from typing import Union
 from pydantic import BaseModel
 from fastapi import FastAPI
-from dotenv import load_dotenv
 import database
 import llm
 
@@ -14,11 +13,16 @@ class PostHumanQueryPayload(BaseModel):
 class PostHumanQueryResponse(BaseModel):
     result: list
     
-def limpiar_cadena(cadena: str) -> str:
+def limpiar_json_envoltura(texto: str) -> str:
     """
-    Elimina caracteres de nueva línea, tabulaciones y retornos de carro de una cadena.
+    Elimina las envolturas ```json al inicio y ``` al final de un bloque de texto.
     """
-    return cadena.replace('\n', '').replace('\r', '').replace('\t', '')
+    texto = texto.strip()
+    if texto.startswith("```json"):
+        texto = texto[len("```json"):].lstrip()
+    if texto.endswith("```"):
+        texto = texto[:-3].rstrip()
+    return texto
 
 
 @app.post(
@@ -29,7 +33,7 @@ def limpiar_cadena(cadena: str) -> str:
 async def human_query(payload: PostHumanQueryPayload) -> dict[str, str]:
     #transform human query to sql query
     sql_query = await llm.human_query_to_sql(payload.human_query)
-    sql_query = limpiar_cadena(sql_query)
+    sql_query = limpiar_json_envoltura(sql_query)
     if not sql_query:
         return{"error": "failed to generate SQL query"}
     result_dict = json.loads(sql_query)
