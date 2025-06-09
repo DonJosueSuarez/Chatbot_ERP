@@ -15,17 +15,16 @@ def get_schema() -> str:
    inspector = inspect(engine)
    table_names = inspector.get_view_names()
    
-   def get_column_details(table_name) -> list[str]:
+   def get_column_names(table_name) -> list[str]:
       columns = inspector.get_columns(table_name)
-      return[f"{col['name']} ({col['type']})" for col in columns]
-    
+      return [col['name'] for col in columns]
+   
    schema_info = []
    for table_name in table_names:
-      table_info = [f"Table: {table_name}"]
-      table_info.append("Columns:")
-      table_info.extend(f" - {column}" for column in get_column_details(table_name))
-      schema_info.append("\n".join(table_info))
-          
+      columns = get_column_names(table_name)
+      table_info = f"Table: {table_name}\nColumns: {', '.join(columns)}"
+      schema_info.append(table_info)
+         
    engine.dispose() 
    print(schema_info)       
    return "\n\n".join(schema_info)
