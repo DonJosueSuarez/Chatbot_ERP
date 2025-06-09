@@ -37,10 +37,10 @@ async def human_query_to_sql(human_query: str) -> str | None:
         response = await client.post(API_URL, headers=HEADERS, json=payload, timeout=30)
 
     if response.status_code != 200:
-        print(f"Error DeepSeek: {response.status_code} - {response.text}")
+        #print(f"Error DeepSeek: {response.status_code} - {response.text}")
         return None
 
-    print("Response from DeepSeek:", response.json())
+    #print("Response from DeepSeek:", response.json())
     return response.json()["choices"][0]["message"]["content"]
 
 async def build_answer(result: list[dict[str, Any]], human_query: str) -> str | None:
@@ -58,14 +58,14 @@ async def build_answer(result: list[dict[str, Any]], human_query: str) -> str | 
             {"role": "user", "content": f"SQL Result: {result} \nUser Question: {human_query}"}
         ],
         "temperature": 0,
-        "max_tokens": 600
+        "max_tokens": 2000
     }
 
     async with httpx.AsyncClient() as client:
         response = await client.post(API_URL, headers=HEADERS, json=payload, timeout=30)
 
     if response.status_code != 200:
-        print(f"Error DeepSeek: {response.status_code} - {response.text}")
+        #print(f"Error DeepSeek: {response.status_code} - {response.text}")
         return None
 
     return response.json()["choices"][0]["message"]["content"]

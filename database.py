@@ -26,7 +26,7 @@ def get_schema() -> str:
       schema_info.append(table_info)
          
    engine.dispose() 
-   print(schema_info)       
+   #print(schema_info)       
    return "\n\n".join(schema_info)
 
 async def query(sql_query: str) -> list[dict[str, Any]]:
