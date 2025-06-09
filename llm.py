@@ -30,7 +30,7 @@ async def human_query_to_sql(human_query: str) -> str | None:
             {"role": "user", "content": human_query}
         ],
         "temperature": 0,
-        "max_tokens": 2000
+        "max_tokens": 5000
     }
 
     async with httpx.AsyncClient() as client:
