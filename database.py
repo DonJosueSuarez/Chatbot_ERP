@@ -5,9 +5,9 @@ from sqlalchemy.sql import text
 
 
 username = 'sa'
-password = '12345'
-server = 'DESKTOP-2FDM7CO'
-database = 'SONGPruebas'
+password = ''
+server = '192.168.100.21\sql2019'
+database = 'CHAT'
 engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}/{database}?driver=ODBC+Driver+17+for+SQL+Server')
 session = sessionmaker(bind=engine)
 

@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import database
 import llm
 import markdown
+import uvicorn
 
 app = FastAPI()
 
@@ -43,7 +44,7 @@ def limpiar_json_envoltura(texto: str) -> str:
 async def human_query(payload: PostHumanQueryPayload) -> dict[str, str]:
     #transform human query to sql query
     sql_query = await llm.human_query_to_sql(payload.human_query)
-    #print(sql_query)
+    print(sql_query)
     sql_query = limpiar_json_envoltura(sql_query)
     if not sql_query:
         return{"error": "failed to generate SQL query"}
@@ -59,3 +60,6 @@ async def human_query(payload: PostHumanQueryPayload) -> dict[str, str]:
     #html_response = markdown.markdown(answer)
     
     return{"answer": answer}
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="127.0.0.1", port=8000)

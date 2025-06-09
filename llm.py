@@ -6,7 +6,7 @@ import database
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 HEADERS = {
     "Content-Type": "application/json",
-    "Authorization": "Bearer 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"
+    "Authorization": "Bearer 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"
 }
 
 async def human_query_to_sql(human_query: str) -> str | None:
@@ -37,7 +37,7 @@ async def human_query_to_sql(human_query: str) -> str | None:
         response = await client.post(API_URL, headers=HEADERS, json=payload, timeout=30)
 
     if response.status_code != 200:
-        #print(f"Error DeepSeek: {response.status_code} - {response.text}")
+        print(f"Error DeepSeek: {response.status_code} - {response.text}")
         return None
 
     #print("Response from DeepSeek:", response.json())
