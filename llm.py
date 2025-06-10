@@ -1,71 +1,65 @@
-import httpx
+import ollama
+import json
 from typing import Any
 import database
 
-# URL y cabecera de la API de DeepSeek en OpenRouter
-API_URL = "https://openrouter.ai/api/v1/chat/completions"
-HEADERS = {
-    "Content-Type": "application/json",
-    "Authorization": "Bearer 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"
-}
-
 async def human_query_to_sql(human_query: str) -> str | None:
-    """Convierte una consulta en lenguaje natural a T-SQL usando Deepseek AI."""
+    """Convierte una consulta en lenguaje natural a T-SQL usando un modelo local en Ollama."""
     
     database_schema = database.get_schema()
 
     system_message = f"""
     You are an AI that strictly translates natural language questions into T-SQL queries.
-    Do not add any commentary, explanations, or extra details—only return a valid JSON object with the key 'sql_query' containing the SQL query as a string. Do not include any reasoning or comments. Output example: {{"sql_query": "SELECT ..."}}
-    If you output anything other than the JSON object, it will be considered an error.
+    Always return a valid JSON object with the key 'sql_query' containing the SQL query as a string.
+    Do not include any reasoning or comments. Example output:
+    {{
+        "sql_query": "SELECT Cliente FROM cabecera_factura ORDER BY Total DESC LIMIT 1"
+    }}
+    If your response is not a valid JSON object, it will be considered incorrect.
     <schema>
     {database_schema}
     </schema>
     """
 
-    payload = {
-        "model": "deepseek/deepseek-r1:free",
-        "messages": [
+    response = ollama.chat(
+        model="llama3.2",
+        messages=[
             {"role": "system", "content": system_message},
             {"role": "user", "content": human_query}
         ],
-        "temperature": 0,
-        "max_tokens": 5000
-    }
+        options={"temperature": 0}
+    )
+    
+    print("Respuesta completa de Ollama:", response)
 
-    async with httpx.AsyncClient() as client:
-        response = await client.post(API_URL, headers=HEADERS, json=payload, timeout=30)
-
-    if response.status_code != 200:
-        print(f"Error DeepSeek: {response.status_code} - {response.text}")
+    # Verificar que la respuesta tiene el formato esperado
+    content = response.get("message", {}).get("content", "")
+    if not content:
+        print("Error: Ollama devolvió una respuesta vacía o mal formada.")
         return None
 
-    #print("Response from DeepSeek:", response.json())
-    return response.json()["choices"][0]["message"]["content"]
+    try:
+        parsed_json = json.loads(content)  # Convertir la cadena JSON en un diccionario
+        return parsed_json.get("sql_query")  # Extraer solo la consulta SQL
+    except json.JSONDecodeError:
+        print(f"Error al decodificar la respuesta de Ollama: {content}")
+        return None
 
 async def build_answer(result: list[dict[str, Any]], human_query: str) -> str | None:
     """Genera una respuesta en lenguaje natural basada en los resultados SQL."""
-
+    
     system_message = """
     You are an AI that answers strictly based on provided SQL results.
-    Return sql answer with a friendly languaje per user.
+    Return the SQL answer with a friendly language for the user.
     """
 
-    payload = {
-        "model": "deepseek/deepseek-r1:free",
-        "messages": [
+    response = ollama.chat(
+        model="llama3.2",
+        messages=[
             {"role": "system", "content": system_message},
             {"role": "user", "content": f"SQL Result: {result} \nUser Question: {human_query}"}
         ],
-        "temperature": 0,
-        "max_tokens": 2000
-    }
+        options={"temperature": 0}
+    )
 
-    async with httpx.AsyncClient() as client:
-        response = await client.post(API_URL, headers=HEADERS, json=payload, timeout=30)
-
-    if response.status_code != 200:
-        #print(f"Error DeepSeek: {response.status_code} - {response.text}")
-        return None
-
-    return response.json()["choices"][0]["message"]["content"]
+    return response.get("message", {}).get("content", "")

@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import database
 import llm
-import markdown
+#import markdown
 import uvicorn
 
 app = FastAPI()
@@ -33,7 +33,22 @@ def limpiar_json_envoltura(texto: str) -> str:
         texto = texto[len("```json"):].lstrip()
     if texto.endswith("```"):
         texto = texto[:-3].rstrip()
-    return texto
+    return clean_text(texto)
+
+import re
+
+def clean_text(text):
+    """
+    Elimina caracteres de formato como \n, \t, \r y dobles espacios de una cadena de texto.
+    """
+    # Reemplaza saltos de línea, tabulaciones y retornos de carro por un espacio
+    text = re.sub(r'[\n\r\t]', ' ', text)
+    
+    # Reemplaza múltiples espacios por uno solo
+    text = re.sub(r' +', ' ', text)
+    
+    # Elimina espacios al inicio y final de la cadena
+    return text.strip()
 
 
 @app.post(
@@ -44,8 +59,9 @@ def limpiar_json_envoltura(texto: str) -> str:
 async def human_query(payload: PostHumanQueryPayload) -> dict[str, str]:
     #transform human query to sql query
     sql_query = await llm.human_query_to_sql(payload.human_query)
+    #sql_query = limpiar_json_envoltura(sql_query)
     print(sql_query)
-    sql_query = limpiar_json_envoltura(sql_query)
+
     if not sql_query:
         return{"error": "failed to generate SQL query"}
     result_dict = json.loads(sql_query)

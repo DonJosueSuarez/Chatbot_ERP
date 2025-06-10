@@ -5,9 +5,9 @@ from sqlalchemy.sql import text
 
 
 username = 'sa'
-password = ''
-server = '192.168.100.21\sql2019'
-database = 'CHAT'
+password = '1234'
+server = 'DESKTOP-GF18VOI'
+database = 'SONG'
 engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}/{database}?driver=ODBC+Driver+17+for+SQL+Server')
 session = sessionmaker(bind=engine)
 
@@ -26,7 +26,7 @@ def get_schema() -> str:
       schema_info.append(table_info)
          
    engine.dispose() 
-   #print(schema_info)       
+   print(schema_info)       
    return "\n\n".join(schema_info)
 
 async def query(sql_query: str) -> list[dict[str, Any]]:
