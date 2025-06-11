@@ -6,7 +6,7 @@ import database
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 HEADERS = {
     "Content-Type": "application/json",
-    "Authorization": "Bearer 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"
+    "Authorization": "Bearer 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"
 }
 
 async def human_query_to_sql(human_query: str) -> str | None:
