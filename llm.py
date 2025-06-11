@@ -1,65 +1,72 @@
+import httpx
 import ollama
 import json
 from typing import Any
 import database
 
+import re
+
 async def human_query_to_sql(human_query: str) -> str | None:
-    """Convierte una consulta en lenguaje natural a T-SQL usando un modelo local en Ollama."""
+    """Convierte una consulta en lenguaje natural a T-SQL usando gemma2:2b local en Ollama."""
     
     database_schema = database.get_schema()
-
+    
     system_message = f"""
-    You are an AI that strictly translates natural language questions into T-SQL queries.
-    Always return a valid JSON object with the key 'sql_query' containing the SQL query as a string.
-    Do not include any reasoning or comments. Example output:
-    {{
-        "sql_query": "SELECT Cliente FROM cabecera_factura ORDER BY Total DESC LIMIT 1"
-    }}
-    If your response is not a valid JSON object, it will be considered incorrect.
+    You are an AI that strictly translates natural language questions into T-SQL queries for Microsoft SQL Server.
+    IMPORTANT: Only use valid T-SQL syntax for SQL Server. NEVER use LIMIT. ALWAYS use SELECT TOP n ...
+    Do not add any commentary, explanations, or extra details—only return a valid JSON object.
+
+    Always respond in JSON format as:
+    {{"sql_query": "<your SQL query>"}}
+
     <schema>
     {database_schema}
     </schema>
     """
 
-    response = ollama.chat(
-        model="llama3.2",
-        messages=[
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": human_query}
-        ],
-        options={"temperature": 0}
-    )
-    
-    print("Respuesta completa de Ollama:", response)
-
-    # Verificar que la respuesta tiene el formato esperado
-    content = response.get("message", {}).get("content", "")
-    if not content:
-        print("Error: Ollama devolvió una respuesta vacía o mal formada.")
+    user_message = human_query
+    async with httpx.AsyncClient(timeout=60) as client:
+        response = await client.post(
+            "http://localhost:11434/api/generate",  # Ajusta el puerto si es necesario
+            json={
+                "temperature": 0,
+                "model": "gemma2:2b",
+                "prompt": f"{system_message}\n\n{user_message}",
+                "stream": False
+            }
+        )
+        
+    if response.status_code != 200:
         return None
-
-    try:
-        parsed_json = json.loads(content)  # Convertir la cadena JSON en un diccionario
-        return parsed_json.get("sql_query")  # Extraer solo la consulta SQL
-    except json.JSONDecodeError:
-        print(f"Error al decodificar la respuesta de Ollama: {content}")
+    print(f"Response from Ollama: {response.text}")
+    response_data = response.json()
+    if "response" not in response_data:
         return None
+    return response_data["response"]
+
 
 async def build_answer(result: list[dict[str, Any]], human_query: str) -> str | None:
     """Genera una respuesta en lenguaje natural basada en los resultados SQL."""
     
-    system_message = """
+    system_message = f"""
     You are an AI that answers strictly based on provided SQL results.
-    Return the SQL answer with a friendly language for the user.
+    Return sql answer with a friendly languaje per user in spanish language.
+    SQL Results:
+    {result}
     """
 
-    response = ollama.chat(
-        model="llama3.2",
-        messages=[
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": f"SQL Result: {result} \nUser Question: {human_query}"}
-        ],
-        options={"temperature": 0}
-    )
-
-    return response.get("message", {}).get("content", "")
+    async with httpx.AsyncClient(timeout=60) as client:
+        response = await client.post(
+            "http://localhost:11434/api/generate",
+            json={
+                "temperature": 0,
+                "model": "gemma2:2b",
+                "prompt": system_message,
+                "stream": False
+            }
+        )
+    
+    if response.status_code != 200:
+        return None
+    
+    return response.json()["response"]
