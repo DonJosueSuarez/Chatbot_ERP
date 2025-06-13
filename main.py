@@ -56,8 +56,22 @@ async def human_query(payload: PostHumanQueryPayload) -> dict[str, str]:
     if not answer:
         return{"error": "Failed to generate answer"}
     
-    #html_response = markdown.markdown(answer)
-    
+    # Detectar si el usuario pide un gráfico
+    if llm.user_requests_plot(payload.human_query):
+        # Intentar inferir claves x/y automáticamente (simple: usar las dos primeras columnas)
+        x_key, y_key = None, None
+        if result and isinstance(result, list) and len(result) > 0:
+            keys = list(result[0].keys())
+            if len(keys) >= 2:
+                x_key, y_key = keys[0], keys[1]
+        # Tipo de gráfico por defecto: barras
+        plot_type = "bar"
+        # Generar gráfico solo si hay datos y claves válidas
+        image_base64 = None
+        if x_key and y_key:
+            image_base64 = llm.generate_plot_from_sql_result(result, plot_type=plot_type, x_key=x_key, y_key=y_key, title=payload.human_query)
+        return {"answer": answer, "image_base64": image_base64}
+    # Si no se pide gráfico, solo respuesta textual
     return{"answer": answer}
 
 if __name__ == "__main__":

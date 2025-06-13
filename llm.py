@@ -1,12 +1,16 @@
 import httpx
 from typing import Any
 import database
+import matplotlib.pyplot as plt
+import base64
+from io import BytesIO
+import re
 
 # URL y cabecera de la API de DeepSeek en OpenRouter
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 HEADERS = {
     "Content-Type": "application/json",
-    "Authorization": "Bearer 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"
+    "Authorization": "Bearer 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"
 }
 
 async def human_query_to_sql(human_query: str) -> str | None:
@@ -69,3 +73,39 @@ async def build_answer(result: list[dict[str, Any]], human_query: str) -> str | 
         return None
 
     return response.json()["choices"][0]["message"]["content"]
+
+def generate_plot_from_sql_result(result: list[dict[str, Any]], plot_type: str = "bar", x_key: str = None, y_key: str = None, title: str = "") -> str:
+    """
+    Genera un gráfico con matplotlib a partir de los resultados SQL y lo retorna como un string base64.
+    plot_type: 'bar', 'pie', 'line', etc.
+    x_key, y_key: claves de los datos a graficar.
+    """
+    if not result or not x_key or not y_key:
+        return None
+    x = [row[x_key] for row in result]
+    y = [row[y_key] for row in result]
+    plt.figure(figsize=(8,4))
+    if plot_type == "bar":
+        plt.bar(x, y)
+    elif plot_type == "pie":
+        plt.pie(y, labels=x, autopct='%1.1f%%')
+    elif plot_type == "line":
+        plt.plot(x, y, marker='o')
+    else:
+        return None
+    plt.title(title or f"{plot_type.title()} Chart")
+    plt.tight_layout()
+    buf = BytesIO()
+    plt.savefig(buf, format='png')
+    plt.close()
+    buf.seek(0)
+    img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+    return img_base64
+
+def user_requests_plot(human_query: str) -> bool:
+    """Detecta si el usuario solicita un gráfico en su pregunta."""
+    keywords = [
+        'grafica', 'gráfico', 'gráfica', 'plot', 'chart', 'diagrama', 'visualiza', 'visualización', 'barras', 'línea', 'pie', 'pastel'
+    ]
+    pattern = re.compile(r'(' + '|'.join(keywords) + r')', re.IGNORECASE)
+    return bool(pattern.search(human_query))
