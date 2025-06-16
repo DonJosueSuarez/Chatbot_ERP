@@ -5,14 +5,17 @@ import matplotlib.pyplot as plt
 import base64
 from io import BytesIO
 import re
+import os
+from dotenv import load_dotenv
+# Cargar las variables de entorno desde el archivo .env
+load_dotenv()
 
-# URL y cabecera de la API de DeepSeek en OpenRouter
-API_URL = "https://openrouter.ai/api/v1/chat/completions"
+API_URL = os.getenv('API_URL')
+API_KEY = os.getenv('API_KEY')
 HEADERS = {
     "Content-Type": "application/json",
-    "Authorization": "Bearer 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"
+    "Authorization": f"Bearer {API_KEY}"
 }
-
 async def human_query_to_sql(human_query: str) -> str | None:
     """Convierte una consulta en lenguaje natural a T-SQL usando Deepseek AI."""
     

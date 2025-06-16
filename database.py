@@ -2,12 +2,14 @@ from typing import Any
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
+import dotenv
+# Cargar las variables de entorno desde el archivo .env
+dotenv.load_dotenv()
 
-
-username = 'sa'
-password = '1234'
-server = 'DESKTOP-GF18VOI'
-database = 'SONG'
+username = dotenv.get_key('.env', 'username')
+password = dotenv.get_key('.env', 'password')
+server = dotenv.get_key('.env', 'server')
+database = dotenv.get_key('.env', 'database')
 engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}/{database}?driver=ODBC+Driver+17+for+SQL+Server')
 session = sessionmaker(bind=engine)
 
