@@ -89,6 +89,8 @@ def generate_plot_from_sql_result(result: list[dict[str, Any]], plot_type: str =
     y = [row[y_key] for row in result]
     plt.figure(figsize=(8,4))
     if plot_type == "bar":
+        plt.style.use('ggplot')  # Estilo de matplotlib
+        plt.rcParams['font.family'] = 'Arial'  # Cambia la fuente a Arial
         plt.bar(x, y)
     elif plot_type == "pie":
         plt.pie(y, labels=x, autopct='%1.1f%%')
