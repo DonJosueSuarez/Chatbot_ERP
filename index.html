@@ -6,8 +6,7 @@
     <title>Chatbot Triple A</title>
     <meta name='viewport' content='width=device-width, initial-scale=1'>
     <link rel='stylesheet' type='text/css' media='screen' href='style.css'>
-    <script src='main.js'></script>
-</head>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script></head>
 <body>
     <div class="Contenedor">
         <div class="Presentacion">
@@ -33,7 +32,12 @@
     function addMessage(sender, text, imageBase64 = null) {
         const msgDiv = document.createElement('div');
         msgDiv.className = sender === 'user' ? 'msg user' : 'msg bot';
-        let html = `<span class="msg-content">${text}</span>`;
+        let html;
+        if (sender === 'bot') {
+            html = `<span class="msg-content">${marked.parse(text)}</span>`;
+        } else {
+            html = `<span class="msg-content">${text}</span>`;
+        }
         if (imageBase64) {
             html += `<br><img class="chat-plot" src="data:image/png;base64,${imageBase64}" alt="Gráfico generado" />`;
         }
