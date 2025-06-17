@@ -54,7 +54,7 @@
         userInput.value = '';
         addMessage('bot', '<span class="typing">Escribiendo...</span>');
         try {
-            const res = await fetch('http://127.0.0.1:8000/human_query', {
+            const res = await fetch('http://186.3.251.109:9015/human_query', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ human_query: question })
